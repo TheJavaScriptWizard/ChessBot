@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -209,26 +210,103 @@ struct Game {
         game.halfmove_clock = 0;
         game.fullmove_number = 1;
 
-        auto [position, rest] = split_on(fen, ' ');
+        stringstream ss(fen);
+        string positions, active_color_str, castling_str, en_passant_str, halfmove_str, fullmove_str;
+        ss >> positions >> active_color_str >> castling_str >> en_passant_str >> halfmove_str >> fullmove_str;
 
-        deque<Square> deque_squares;
-        stringstream ss(position);
-        string row;
+        game.squares.assign(64, nullopt);
+        size_t piece_index = 0;
 
-        while (getline(ss, row, '/')) {
-            cout << "row: '" << row << "'\n";
+        int rank = 7;
+        int file = 0;
+
+        for (char c : positions) {
+            if (c == '/') {
+                rank--;
+                file = 0;
+            } else if (isdigit(c)) {
+                int empty_squares = c - '0';
+                file += empty_squares;
+            } else {
+                size_t square_index = rank * 8 + file;
+                Color color = isupper(c) ? Color::White : Color::Black;
+
+                char piece_char = tolower(c);
+                PieceType type;
+
+                switch (piece_char) {
+                    case 'p': type = PieceType::Pawn; break;
+                    case 'r': type = PieceType::Rook; break;
+                    case 'n': type = PieceType::Knight; break;
+                    case 'b': type = PieceType::Bishop; break;
+                    case 'q': type = PieceType::Queen; break;
+                    case 'k': type = PieceType::King; break;
+                    default:
+                        throw invalid_argument("Invalid character in FEN string");
+                }
+                
+                game.pieces.push_back({1ULL << square_index, color, type});
+                game.squares[square_index] = piece_index;
+
+                piece_index++;
+                file++;
+            }
+        }
+        
+        if (active_color_str == "w") {
+            game.active_color = Color::White;
+        } else if (active_color_str == "b") {
+            game.active_color = Color::Black;
+        } else {
+            throw invalid_argument("Invalid active color in FEN string");
+        }
+        
+        game.castling_rights = CastlingRights::NONE; 
+        
+        if (castling_str != "-") {
+            for (char c : castling_str) {
+                switch (c) {
+                    case 'K': game.castling_rights = game.castling_rights | CastlingRights::WHITEKINGSIDE; break;
+                    case 'Q': game.castling_rights = game.castling_rights | CastlingRights::WHITEQUEENSIDE; break;
+                    case 'k': game.castling_rights = game.castling_rights | CastlingRights::BLACKKINGSIDE; break;
+                    case 'q': game.castling_rights = game.castling_rights | CastlingRights::BLACKQUEENSIDE; break;
+                    default: 
+                        throw invalid_argument("Invalid castling character in FEN string");
+                }
+            }
+        }
+        
+        if (en_passant_str == "-") {
+            game.en_passant = nullopt;
+        } else {
+            int ep_file = en_passant_str[0] - 'a';
+            int ep_rank = en_passant_str[1] - '1';
+            size_t ep_index = ep_rank * 8 + ep_rank;
+
+            game.en_passant = 1ULL << ep_index;
         }
 
-        game.squares = vector<Square>(deque_squares.begin(), deque_squares.end());
+        game.halfmove_clock = stoi(halfmove_str);
+        game.fullmove_number = stoi(fullmove_str);
 
         return game;
     }
 };
 
-int main() {
-    string fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+TEST(FENParserTest, StartingPosition) {
+    string starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     
-    Game game = Game::read_FEN(fen_str);
+    Game game = Game::read_FEN(starting_fen);
     
-    return 0;
+    EXPECT_EQ(game.active_color, Color::White);
+    EXPECT_EQ(game.halfmove_clock, 0);
+    EXPECT_EQ(game.fullmove_number, 1);
+    EXPECT_EQ(game.castling_rights, CastlingRights::ALL);
+    EXPECT_FALSE(game.en_passant.has_value());
+    EXPECT_EQ(game.pieces.size(), 32);
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
