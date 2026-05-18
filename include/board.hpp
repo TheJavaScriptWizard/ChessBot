@@ -44,9 +44,13 @@ struct Game {
     
     uint64_t hash; 
 
+    uint64_t occupationBoard = 0x0000000000000000; //Default
+
+    Game(); //past initalizer
+
     void push_piece_and_square(size_t position, Color color, PieceType piece_type, size_t& index);
     void push_empty_square();
-    static Game initialize();
     std::string to_string() const;
     static Game read_FEN(const std::string& fen);
+    uint64_t getOccupationBoard();
 };
