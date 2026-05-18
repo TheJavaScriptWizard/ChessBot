@@ -1,4 +1,4 @@
-//#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -251,7 +251,7 @@ Game Game::read_FEN(const string& fen) { //This will have future issues compilin
     return game;
 }
 
-/*
+
 TEST(FENParserTest, StartingPosition) {
     string starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     
@@ -264,7 +264,7 @@ TEST(FENParserTest, StartingPosition) {
     EXPECT_FALSE(game.en_passant.has_value());
     EXPECT_EQ(game.pieces.size(), 32);
 }
-*/
+
 uint64_t Game::getOccupationBoard() //later can be set to a updated function, as occupation board can be defaulted and then updated per move... later optimization as I practice bitboards better
 {
     int referencePosition = 0;
@@ -278,6 +278,6 @@ uint64_t Game::getOccupationBoard() //later can be set to a updated function, as
 
 int main(int argc, char **argv) {
     Zobrist::init();
-    //::testing::InitGoogleTest(&argc, argv);
-    //return RUN_ALL_TESTS();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
