@@ -276,6 +276,57 @@ uint64_t Game::getOccupationBoard() //later can be set to a updated function, as
     return occupationBoard;
 }
 
+class MovementTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        initKnightAttacks();
+        initKingAttacks();
+        game = Game();
+    }
+};
+
+TEST_F(MovementTest, KnightInCenterHasEightMoves) {
+    uint64_t d4_knight = KnightAttacks[27];
+    EXPECT_EQ(__builtin_popcountll(d4_knight), 8);
+}
+
+TEST_F(MovementTest, KnightInCornerHasTwoMoves) {
+    uint64_t a1_knight = KnightAttacks[0];
+    EXPECT_EQ(__builtin_popcountll(a1_knight), 2);
+}
+
+TEST_F(MovementTest, WhitePawnDiagonalCaptureInCenter) {
+    PiecePosition e4_pawn = 1ULL << 28;
+    uint64_t attacks = pawnAttacks(e4_pawn, Color::White);
+    
+    uint64_t expected_attacks = (1ULL << 35) | (1ULL << 37);
+    EXPECT_EQ(attacks, expected_attacks);
+}
+
+TEST_F(MovementTest, WhitePawnDiagonalCaptureOnAFileEdge) {
+    PiecePosition a2_pawn = 1ULL << 8;
+    uint64_t attacks = pawnAttacks(a2_pawn, Color::White);
+    
+    uint64_t expected_attacks = (1ULL << 17);
+    EXPECT_EQ(attacks, expected_attacks);
+}
+
+TEST_F(MovementTest, RookOnEmptyBoardCorner) {
+    game.occupationBoard = 0ULL; 
+    
+    PiecePosition h1_rook = 1ULL << 7;
+    uint64_t attacks = rookSlide(h1_rook);
+    
+    EXPECT_EQ(__builtin_popcountll(attacks), 14);
+}
+
+TEST(BoardStateTest, StartingOccupationBoardCount) {
+    Game new_game = Game();
+    uint64_t occ = new_game.getOccupationBoard();
+    
+    EXPECT_EQ(__builtin_popcountll(occ), 32);
+}
+
 int main(int argc, char **argv) {
     Zobrist::init();
     ::testing::InitGoogleTest(&argc, argv);
