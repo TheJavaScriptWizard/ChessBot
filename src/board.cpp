@@ -159,19 +159,22 @@ string Game::to_string() const {
 
     return board;
 }
-
 Game Game::read_FEN(const string& fen) { //This will have future issues compiling once you call the function...
-    game.active_color = Color::White;
-    game.castling_rights = CastlingRights::ALL;
-    game.en_passant = nullopt;
-    game.halfmove_clock = 0;
-    game.fullmove_number = 1;
+    Game game_FEN; // Calls constructor
+    game_FEN.pieces.clear(); // So need to clear all default pieces for later pushback functions
+
+    game_FEN.active_color = Color::White;
+    game_FEN.castling_rights = CastlingRights::ALL;
+    game_FEN.en_passant = nullopt;
+    game_FEN.halfmove_clock = 0;
+    game_FEN.fullmove_number = 1;
 
     stringstream ss(fen);
     string positions, active_color_str, castling_str, en_passant_str, halfmove_str, fullmove_str;
     ss >> positions >> active_color_str >> castling_str >> en_passant_str >> halfmove_str >> fullmove_str;
 
-    game.squares.assign(64, nullopt);
+    game_FEN.squares.assign(64, nullopt);
+
     size_t piece_index = 0;
 
     int rank = 7;
@@ -202,8 +205,8 @@ Game Game::read_FEN(const string& fen) { //This will have future issues compilin
                     throw invalid_argument("Invalid character in FEN string");
             }
             
-            game.pieces.push_back({1ULL << square_index, color, type});
-            game.squares[square_index] = piece_index;
+            game_FEN.pieces.push_back({1ULL << square_index, color, type});
+            game_FEN.squares[square_index] = piece_index;
 
             piece_index++;
             file++;
@@ -211,22 +214,22 @@ Game Game::read_FEN(const string& fen) { //This will have future issues compilin
     }
     
     if (active_color_str == "w") {
-        game.active_color = Color::White;
+        game_FEN.active_color = Color::White;
     } else if (active_color_str == "b") {
-        game.active_color = Color::Black;
+        game_FEN.active_color = Color::Black;
     } else {
         throw invalid_argument("Invalid active color in FEN string");
     }
     
-    game.castling_rights = CastlingRights::NONE; 
+    game_FEN.castling_rights = CastlingRights::NONE; 
     
     if (castling_str != "-") {
         for (char c : castling_str) {
             switch (c) {
-                case 'K': game.castling_rights = game.castling_rights | CastlingRights::WHITEKINGSIDE; break;
-                case 'Q': game.castling_rights = game.castling_rights | CastlingRights::WHITEQUEENSIDE; break;
-                case 'k': game.castling_rights = game.castling_rights | CastlingRights::BLACKKINGSIDE; break;
-                case 'q': game.castling_rights = game.castling_rights | CastlingRights::BLACKQUEENSIDE; break;
+                case 'K': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::WHITEKINGSIDE; break;
+                case 'Q': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::WHITEQUEENSIDE; break;
+                case 'k': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::BLACKKINGSIDE; break;
+                case 'q': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::BLACKQUEENSIDE; break;
                 default: 
                     throw invalid_argument("Invalid castling character in FEN string");
             }
@@ -234,21 +237,21 @@ Game Game::read_FEN(const string& fen) { //This will have future issues compilin
     }
     
     if (en_passant_str == "-") {
-        game.en_passant = nullopt;
+        game_FEN.en_passant = nullopt;
     } else {
         int ep_file = en_passant_str[0] - 'a';
         int ep_rank = en_passant_str[1] - '1';
         size_t ep_index = ep_rank * 8 + ep_file;
 
-        game.en_passant = 1ULL << ep_index;
+        game_FEN.en_passant = 1ULL << ep_index;
     }
 
-    game.halfmove_clock = stoi(halfmove_str);
-    game.fullmove_number = stoi(fullmove_str);
+    game_FEN.halfmove_clock = stoi(halfmove_str);
+    game_FEN.fullmove_number = stoi(fullmove_str);
 
-    game.hash = Zobrist::generate_full_hash(game);
+    game_FEN.hash = Zobrist::generate_full_hash(game_FEN);
 
-    return game;
+    return game_FEN;
 }
 
 
