@@ -67,3 +67,7 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+
+# clang++ src/board.cpp src/zobrist.cpp src/movement.cpp -I include -I /opt/homebrew/include -L /opt/homebrew/lib -lgtest -lgtest_main -pthread -o chessTests -std=c++20
+

@@ -93,49 +93,49 @@ void Game::push_empty_square() {
 
 Game::Game() 
 {
-    game.active_color = Color::White;
-    game.castling_rights = CastlingRights::ALL;
-    game.en_passant = nullopt;
-    game.halfmove_clock = 0;
-    game.fullmove_number = 1;
+    active_color = Color::White;
+    castling_rights = CastlingRights::ALL;
+    en_passant = nullopt;
+    halfmove_clock = 0;
+    fullmove_number = 1;
 
     size_t piece_index = 0;
     Color color = Color::White;
 
-    game.push_piece_and_square(0, color, PieceType::Rook, piece_index);
-    game.push_piece_and_square(1, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(2, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(3, color, PieceType::Queen, piece_index);
-    game.push_piece_and_square(4, color, PieceType::King, piece_index);
-    game.push_piece_and_square(5, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(6, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(7, color, PieceType::Rook, piece_index);
+    push_piece_and_square(0, color, PieceType::Rook, piece_index);
+    push_piece_and_square(1, color, PieceType::Knight, piece_index);
+    push_piece_and_square(2, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(3, color, PieceType::Queen, piece_index);
+    push_piece_and_square(4, color, PieceType::King, piece_index);
+    push_piece_and_square(5, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(6, color, PieceType::Knight, piece_index);
+    push_piece_and_square(7, color, PieceType::Rook, piece_index);
 
     for (int i = 8; i < 16; ++i) {
-        game.push_piece_and_square(i, color, PieceType::Pawn, piece_index);
+        push_piece_and_square(i, color, PieceType::Pawn, piece_index);
     }
 
     for (int i = 16; i < 48; ++i) {
-        game.push_empty_square();
+        push_empty_square();
     }
 
     color = Color::Black;
 
     for (int i = 48; i < 56; ++i) {
-        game.push_piece_and_square(i, color, PieceType::Pawn, piece_index);
+        push_piece_and_square(i, color, PieceType::Pawn, piece_index);
     }
 
     int offset = 56;
-    game.push_piece_and_square(offset + 0, color, PieceType::Rook, piece_index);
-    game.push_piece_and_square(offset + 1, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(offset + 2, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(offset + 3, color, PieceType::Queen, piece_index);
-    game.push_piece_and_square(offset + 4, color, PieceType::King, piece_index);
-    game.push_piece_and_square(offset + 5, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(offset + 6, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(offset + 7, color, PieceType::Rook, piece_index);
+    push_piece_and_square(offset + 0, color, PieceType::Rook, piece_index);
+    push_piece_and_square(offset + 1, color, PieceType::Knight, piece_index);
+    push_piece_and_square(offset + 2, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(offset + 3, color, PieceType::Queen, piece_index);
+    push_piece_and_square(offset + 4, color, PieceType::King, piece_index);
+    push_piece_and_square(offset + 5, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(offset + 6, color, PieceType::Knight, piece_index);
+    push_piece_and_square(offset + 7, color, PieceType::Rook, piece_index);
 
-    game.hash = Zobrist::generate_full_hash(game);
+    hash = Zobrist::generate_full_hash(game);
 }
 
 string Game::to_string() const {
@@ -238,7 +238,7 @@ Game Game::read_FEN(const string& fen) { //This will have future issues compilin
     } else {
         int ep_file = en_passant_str[0] - 'a';
         int ep_rank = en_passant_str[1] - '1';
-        size_t ep_index = ep_rank * 8 + ep_rank;
+        size_t ep_index = ep_rank * 8 + ep_file;
 
         game.en_passant = 1ULL << ep_index;
     }
@@ -268,7 +268,7 @@ TEST(FENParserTest, StartingPosition) {
 uint64_t Game::getOccupationBoard() //later can be set to a updated function, as occupation board can be defaulted and then updated per move... later optimization as I practice bitboards better
 {
     int referencePosition = 0;
-    for (int i = 0; i < pieces.size() - 1; i++)
+    for (int i = 0; i < pieces.size(); i++)
     {
          occupationBoard = occupationBoard | pieces[i].position; // pieces position is stored in bitboard, or all bitboards together to get complete occupation table.
     }
@@ -329,6 +329,10 @@ TEST(BoardStateTest, StartingOccupationBoardCount) {
 
 int main(int argc, char **argv) {
     Zobrist::init();
+
+    generateKnightAttacks(27);
+    initKnightAttacks();
+    
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
