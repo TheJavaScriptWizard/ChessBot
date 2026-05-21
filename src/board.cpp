@@ -8,10 +8,14 @@
 #include <sstream>
 #include <stdexcept>
 #include <cctype>
+
 #include "board.hpp"
 #include "zobrist.hpp"
+#include "movement.hpp"
 
 using namespace std;
+
+ Game game; // auto calls game constructor - Your old Game::initalize
 
 const char COL_MAP[8] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 
@@ -87,53 +91,51 @@ void Game::push_empty_square() {
     squares.push_back(nullopt);
 }
 
-Game Game::initialize() {
-    Game game;
-    game.active_color = Color::White;
-    game.castling_rights = CastlingRights::ALL;
-    game.en_passant = nullopt;
-    game.halfmove_clock = 0;
-    game.fullmove_number = 1;
+Game::Game() 
+{
+    active_color = Color::White;
+    castling_rights = CastlingRights::ALL;
+    en_passant = nullopt;
+    halfmove_clock = 0;
+    fullmove_number = 1;
 
     size_t piece_index = 0;
     Color color = Color::White;
 
-    game.push_piece_and_square(0, color, PieceType::Rook, piece_index);
-    game.push_piece_and_square(1, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(2, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(3, color, PieceType::Queen, piece_index);
-    game.push_piece_and_square(4, color, PieceType::King, piece_index);
-    game.push_piece_and_square(5, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(6, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(7, color, PieceType::Rook, piece_index);
+    push_piece_and_square(0, color, PieceType::Rook, piece_index);
+    push_piece_and_square(1, color, PieceType::Knight, piece_index);
+    push_piece_and_square(2, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(3, color, PieceType::Queen, piece_index);
+    push_piece_and_square(4, color, PieceType::King, piece_index);
+    push_piece_and_square(5, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(6, color, PieceType::Knight, piece_index);
+    push_piece_and_square(7, color, PieceType::Rook, piece_index);
 
     for (int i = 8; i < 16; ++i) {
-        game.push_piece_and_square(i, color, PieceType::Pawn, piece_index);
+        push_piece_and_square(i, color, PieceType::Pawn, piece_index);
     }
 
     for (int i = 16; i < 48; ++i) {
-        game.push_empty_square();
+        push_empty_square();
     }
 
     color = Color::Black;
 
     for (int i = 48; i < 56; ++i) {
-        game.push_piece_and_square(i, color, PieceType::Pawn, piece_index);
+        push_piece_and_square(i, color, PieceType::Pawn, piece_index);
     }
 
     int offset = 56;
-    game.push_piece_and_square(offset + 0, color, PieceType::Rook, piece_index);
-    game.push_piece_and_square(offset + 1, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(offset + 2, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(offset + 3, color, PieceType::Queen, piece_index);
-    game.push_piece_and_square(offset + 4, color, PieceType::King, piece_index);
-    game.push_piece_and_square(offset + 5, color, PieceType::Bishop, piece_index);
-    game.push_piece_and_square(offset + 6, color, PieceType::Knight, piece_index);
-    game.push_piece_and_square(offset + 7, color, PieceType::Rook, piece_index);
+    push_piece_and_square(offset + 0, color, PieceType::Rook, piece_index);
+    push_piece_and_square(offset + 1, color, PieceType::Knight, piece_index);
+    push_piece_and_square(offset + 2, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(offset + 3, color, PieceType::Queen, piece_index);
+    push_piece_and_square(offset + 4, color, PieceType::King, piece_index);
+    push_piece_and_square(offset + 5, color, PieceType::Bishop, piece_index);
+    push_piece_and_square(offset + 6, color, PieceType::Knight, piece_index);
+    push_piece_and_square(offset + 7, color, PieceType::Rook, piece_index);
 
-    game.hash = Zobrist::generate_full_hash(game);
-
-    return game;
+    hash = Zobrist::generate_full_hash(game);
 }
 
 string Game::to_string() const {
@@ -157,20 +159,22 @@ string Game::to_string() const {
 
     return board;
 }
+Game Game::read_FEN(const string& fen) { //This will have future issues compiling once you call the function...
+    Game game_FEN; // Calls constructor
+    game_FEN.pieces.clear(); // So need to clear all default pieces for later pushback functions
 
-Game Game::read_FEN(const string& fen) {
-    Game game;
-    game.active_color = Color::White;
-    game.castling_rights = CastlingRights::ALL;
-    game.en_passant = nullopt;
-    game.halfmove_clock = 0;
-    game.fullmove_number = 1;
+    game_FEN.active_color = Color::White;
+    game_FEN.castling_rights = CastlingRights::ALL;
+    game_FEN.en_passant = nullopt;
+    game_FEN.halfmove_clock = 0;
+    game_FEN.fullmove_number = 1;
 
     stringstream ss(fen);
     string positions, active_color_str, castling_str, en_passant_str, halfmove_str, fullmove_str;
     ss >> positions >> active_color_str >> castling_str >> en_passant_str >> halfmove_str >> fullmove_str;
 
-    game.squares.assign(64, nullopt);
+    game_FEN.squares.assign(64, nullopt);
+
     size_t piece_index = 0;
 
     int rank = 7;
@@ -201,8 +205,8 @@ Game Game::read_FEN(const string& fen) {
                     throw invalid_argument("Invalid character in FEN string");
             }
             
-            game.pieces.push_back({1ULL << square_index, color, type});
-            game.squares[square_index] = piece_index;
+            game_FEN.pieces.push_back({1ULL << square_index, color, type});
+            game_FEN.squares[square_index] = piece_index;
 
             piece_index++;
             file++;
@@ -210,22 +214,22 @@ Game Game::read_FEN(const string& fen) {
     }
     
     if (active_color_str == "w") {
-        game.active_color = Color::White;
+        game_FEN.active_color = Color::White;
     } else if (active_color_str == "b") {
-        game.active_color = Color::Black;
+        game_FEN.active_color = Color::Black;
     } else {
         throw invalid_argument("Invalid active color in FEN string");
     }
     
-    game.castling_rights = CastlingRights::NONE; 
+    game_FEN.castling_rights = CastlingRights::NONE; 
     
     if (castling_str != "-") {
         for (char c : castling_str) {
             switch (c) {
-                case 'K': game.castling_rights = game.castling_rights | CastlingRights::WHITEKINGSIDE; break;
-                case 'Q': game.castling_rights = game.castling_rights | CastlingRights::WHITEQUEENSIDE; break;
-                case 'k': game.castling_rights = game.castling_rights | CastlingRights::BLACKKINGSIDE; break;
-                case 'q': game.castling_rights = game.castling_rights | CastlingRights::BLACKQUEENSIDE; break;
+                case 'K': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::WHITEKINGSIDE; break;
+                case 'Q': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::WHITEQUEENSIDE; break;
+                case 'k': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::BLACKKINGSIDE; break;
+                case 'q': game_FEN.castling_rights = game_FEN.castling_rights | CastlingRights::BLACKQUEENSIDE; break;
                 default: 
                     throw invalid_argument("Invalid castling character in FEN string");
             }
@@ -233,21 +237,21 @@ Game Game::read_FEN(const string& fen) {
     }
     
     if (en_passant_str == "-") {
-        game.en_passant = nullopt;
+        game_FEN.en_passant = nullopt;
     } else {
         int ep_file = en_passant_str[0] - 'a';
         int ep_rank = en_passant_str[1] - '1';
-        size_t ep_index = ep_rank * 8 + ep_rank;
+        size_t ep_index = ep_rank * 8 + ep_file;
 
-        game.en_passant = 1ULL << ep_index;
+        game_FEN.en_passant = 1ULL << ep_index;
     }
 
-    game.halfmove_clock = stoi(halfmove_str);
-    game.fullmove_number = stoi(fullmove_str);
+    game_FEN.halfmove_clock = stoi(halfmove_str);
+    game_FEN.fullmove_number = stoi(fullmove_str);
 
-    game.hash = Zobrist::generate_full_hash(game);
+    game_FEN.hash = Zobrist::generate_full_hash(game_FEN);
 
-    return game;
+    return game_FEN;
 }
 
 
@@ -264,9 +268,74 @@ TEST(FENParserTest, StartingPosition) {
     EXPECT_EQ(game.pieces.size(), 32);
 }
 
+uint64_t Game::getOccupationBoard() //later can be set to a updated function, as occupation board can be defaulted and then updated per move... later optimization as I practice bitboards better
+{
+    int referencePosition = 0;
+    for (int i = 0; i < pieces.size(); i++)
+    {
+         occupationBoard = occupationBoard | pieces[i].position; // pieces position is stored in bitboard, or all bitboards together to get complete occupation table.
+    }
+
+    return occupationBoard;
+}
+
+class MovementTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        initKnightAttacks();
+        initKingAttacks();
+        game = Game();
+    }
+};
+
+TEST_F(MovementTest, KnightInCenterHasEightMoves) {
+    uint64_t d4_knight = KnightAttacks[27];
+    EXPECT_EQ(__builtin_popcountll(d4_knight), 8);
+}
+
+TEST_F(MovementTest, KnightInCornerHasTwoMoves) {
+    uint64_t a1_knight = KnightAttacks[0];
+    EXPECT_EQ(__builtin_popcountll(a1_knight), 2);
+}
+
+TEST_F(MovementTest, WhitePawnDiagonalCaptureInCenter) {
+    PiecePosition e4_pawn = 1ULL << 28;
+    uint64_t attacks = pawnAttacks(e4_pawn, Color::White);
+    
+    uint64_t expected_attacks = (1ULL << 35) | (1ULL << 37);
+    EXPECT_EQ(attacks, expected_attacks);
+}
+
+TEST_F(MovementTest, WhitePawnDiagonalCaptureOnAFileEdge) {
+    PiecePosition a2_pawn = 1ULL << 8;
+    uint64_t attacks = pawnAttacks(a2_pawn, Color::White);
+    
+    uint64_t expected_attacks = (1ULL << 17);
+    EXPECT_EQ(attacks, expected_attacks);
+}
+
+TEST_F(MovementTest, RookOnEmptyBoardCorner) {
+    game.occupationBoard = 0ULL; 
+    
+    PiecePosition h1_rook = 1ULL << 7;
+    uint64_t attacks = rookSlide(h1_rook);
+    
+    EXPECT_EQ(__builtin_popcountll(attacks), 14);
+}
+
+TEST(BoardStateTest, StartingOccupationBoardCount) {
+    Game new_game = Game();
+    uint64_t occ = new_game.getOccupationBoard();
+    
+    EXPECT_EQ(__builtin_popcountll(occ), 32);
+}
+
 int main(int argc, char **argv) {
     Zobrist::init();
 
+    generateKnightAttacks(27);
+    initKnightAttacks();
+    
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
